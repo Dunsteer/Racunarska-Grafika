@@ -20,6 +20,11 @@ private:
 	COLORREF gray = RGB(200, 200, 200);
 	XFORM XformOld;
 
+	double baseAngle = 0;
+	double bigArmAngle = 0;
+	double smallArmAngle = 0;
+	double pincerAngle = 0;
+
 protected: // create from serialization only
 	CVezba1View() noexcept;
 	DECLARE_DYNCREATE(CVezba1View)
@@ -66,12 +71,18 @@ private:
 	void DrawCircle(double x, double y, double r, int hatch, COLORREF line, COLORREF fill, CDC* pDC);
 	CPoint* CVezba1View::DrawHalf(double x, double y, double radius, double numberOfPoints, double angle, CDC* pDC);
 	void Rotate(double angle, CDC* pDC);
+	void Translate(double x, double y, CDC* pDC);
+	void ResetTranslate(CDC *pDC);
+	void MirrorVertical(CDC* pDC);
 	void ResetRotation(CDC* pDC);
 
-	void DrawBase(CDC* pDC);
-	void DrawLonger(CDC* pDC);
-	void DrawShorter(CDC* pDC);
-	void DrawArm(CDC* pDC);
+	CPoint DrawBase(CPoint origin, CDC* pDC);
+	CPoint DrawLonger(CPoint origin, CDC* pDC);
+	CPoint DrawShorter(CPoint origin, CDC* pDC);
+	CPoint DrawArm(CPoint origin, CDC* pDC);
+public:
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 };
 
 #ifndef _DEBUG  // debug version in Vezba1View.cpp

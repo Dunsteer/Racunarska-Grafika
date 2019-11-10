@@ -13,6 +13,8 @@
 #include "Vezba1Doc.h"
 #include "Vezba1View.h"
 
+#include "wingdi.h"
+
 #include <cmath>
 
 #ifdef _DEBUG
@@ -31,14 +33,18 @@ BEGIN_MESSAGE_MAP(CVezba1View, CView)
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
+	ON_WM_KEYDOWN()
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 // CVezba1View construction/destruction
 
 CVezba1View::CVezba1View() noexcept
 {
-	// TODO: add construction code here
-
+	this->baseAngle = -90;
+	this->bigArmAngle = 0;
+	this->smallArmAngle = -90;
+	this->pincerAngle = 0;
 }
 
 CVezba1View::~CVezba1View()
@@ -66,22 +72,49 @@ void CVezba1View::OnDraw(CDC* pDC)
 
 	GetClientRect(&rect);
 	pDC->SetMapMode(MM_ANISOTROPIC);
-	pDC->SetWindowExt(2000, 2000);
-	pDC->SetWindowOrg(-1000, -1000);
+	pDC->SetWindowExt(1000, 1000);
+	//pDC->SetWindowExt(2000, 2000);
+	//pDC->SetWindowOrg(-1000, -1000);
 	pDC->SetViewportExt(rect.right, rect.bottom);
 
 	this->DrawGrid(pDC);
-
-	Rotate(90,pDC);
-
-	DrawBase(pDC);
-
 	
+	//LPCSTR s = LPCSTR("LAB II - GDI - opruga.emf");
+	//LPCSTR s = LPCSTR("C:\\FAKS\\GIT\\Racunarska Grafika\\GDI\\Vezba1\\LAB II - GDI - opruga.emf");
 
-	DrawLonger(pDC);
-	DrawShorter(pDC);
+	//HENHMETAFILE MF = GetEnhMetaFileA(s);
+
+	//PlayEnhMetaFile(pDC->m_hDC, MF, CRect(20, 20, 200, 200));
+
+	LPCSTR WMFname = LPCSTR("C:\\Users\\FUJITSU\\Downloads\\LAB II - GDI - opruga.emf");
+	HENHMETAFILE Meta = GetEnhMetaFileA(WMFname);
 	
-	DrawArm(pDC);
+	ResetTranslate(pDC);
+	Translate(17*this->gridSize, 3 * this->gridSize,pDC);
+	Rotate(baseAngle, pDC);
+	CPoint origin = DrawBase(CPoint(0, 0), pDC);
+
+	ResetTranslate(pDC);
+	Translate(origin.x, origin.y, pDC);
+	Rotate(bigArmAngle,pDC);
+
+	origin = DrawLonger(CPoint(0, 0), pDC);
+	PlayEnhMetaFile(pDC->m_hDC, Meta, CRect(-100, 15, origin.x+100, origin.y));
+
+	ResetTranslate(pDC);
+	Translate(origin.x, origin.y, pDC);
+	Rotate(smallArmAngle, pDC);
+	origin = DrawShorter(CPoint(0, 0), pDC);
+	PlayEnhMetaFile(pDC->m_hDC, Meta, CRect(-75, 15, origin.x + 75, origin.y));
+
+	ResetTranslate(pDC);
+	Translate(origin.x, origin.y, pDC);
+	Rotate(pincerAngle, pDC);
+	origin = DrawArm(CPoint(0, 0), pDC);
+	Rotate((-pincerAngle * 2), pDC);
+	MirrorVertical(pDC);
+	
+	origin = DrawArm(CPoint(0, 0), pDC);
 }
 
 
@@ -141,7 +174,7 @@ void CVezba1View::DrawPoligon(double x, double y, double numberOfPoints, double 
 
 	CBrush* oldBrush;
 	CBrush* brush = new CBrush();
-	
+
 	if (hatch != -1)
 		brush->CreateHatchBrush(hatch, fill);
 	else
@@ -293,53 +326,115 @@ void CVezba1View::Rotate(double angle, CDC* pDC)
 	Xform.eM12 = (FLOAT)sin(angle);
 	Xform.eM21 = (FLOAT)-sin(angle);
 	Xform.eM22 = (FLOAT)cos(angle);
-	Xform.eDx = (FLOAT)1.0;
-	Xform.eDy = (FLOAT)1.0;
+	Xform.eDx = (FLOAT)0.0;
+	Xform.eDy = (FLOAT)0.0;
 
 	b = ModifyWorldTransform(pDC->m_hDC, &Xform, MWT_LEFTMULTIPLY);
 	dw = GetLastError();
 
 }
 
-void CVezba1View::DrawBase(CDC* pDC)
+void CVezba1View::Translate(double x, double y, CDC* pDC)
 {
-	this->DrawOctagon(16 * this->gridSize, 16 * gridSize, this->gridSize, -1, green, blue, pDC);
-	this->DrawRectangle(13 * this->gridSize, 18 * this->gridSize, 19 * this->gridSize, 19 * this->gridSize, HS_CROSS, green, blue, pDC);
-	this->DrawTrapezoid(15 * this->gridSize, 17 * this->gridSize, 14 * this->gridSize, 18 * this->gridSize, this->gridSize * 2, -1, green, blue, pDC);
-	this->DrawRectangle(15 * this->gridSize, 16 * this->gridSize, 17 * this->gridSize, 17 * this->gridSize, -1, green, blue, pDC);
+	int prevMode = SetGraphicsMode(pDC->m_hDC, GM_ADVANCED);
+	DWORD dw = GetLastError();
+
+	XFORM Xform;
+	BOOL b = GetWorldTransform(pDC->m_hDC, &XformOld);
+
+	Xform.eM11 = (FLOAT)1;
+	Xform.eM12 = (FLOAT)0;
+	Xform.eM21 = (FLOAT)0;
+	Xform.eM22 = (FLOAT)1;
+	Xform.eDx = (FLOAT)x;
+	Xform.eDy = (FLOAT)y;
+
+	b = ModifyWorldTransform(pDC->m_hDC, &Xform, MWT_LEFTMULTIPLY);
+	dw = GetLastError();
+}
+
+void CVezba1View::ResetTranslate(CDC* pDC)
+{
+	this->Translate(0, 0, pDC);
+}
+
+void CVezba1View::MirrorVertical(CDC* pDC)
+{
+	int prevMode = SetGraphicsMode(pDC->m_hDC, GM_ADVANCED);
+	DWORD dw = GetLastError();
+
+	XFORM Xform;
+	BOOL b = GetWorldTransform(pDC->m_hDC, &XformOld);
+
+	Xform.eM11 = (FLOAT)-1;
+	Xform.eM12 = (FLOAT)0;
+	Xform.eM21 = (FLOAT)0;
+	Xform.eM22 = (FLOAT)1;
+	Xform.eDx = (FLOAT)0.0;
+	Xform.eDy = (FLOAT)0.0;
+
+	b = ModifyWorldTransform(pDC->m_hDC, &Xform, MWT_LEFTMULTIPLY);
+	dw = GetLastError();
+}
+
+CPoint CVezba1View::DrawBase(CPoint origin, CDC* pDC)
+{
+	double x = origin.x * 1.0 / this->gridSize;
+	double y = origin.y * 1.0 / this->gridSize;
+	this->DrawOctagon(x * this->gridSize, y * gridSize, this->gridSize, -1, green, blue, pDC);
+	this->DrawRectangle((x - 3) * this->gridSize, (y + 2) * this->gridSize, (x + 3) * this->gridSize, (y + 3) * this->gridSize, HS_CROSS, green, blue, pDC);
+	this->DrawTrapezoid((x - 1) * this->gridSize, (y + 1) * this->gridSize, (x - 2) * this->gridSize, (y + 2) * this->gridSize, this->gridSize * 2, -1, green, blue, pDC);
+	this->DrawRectangle((x - 1) * this->gridSize, y * this->gridSize, (x + 1) * this->gridSize, (y + 1) * this->gridSize, -1, green, blue, pDC);
 
 	CPen* oldPen;
 	CPen* gridPen = new CPen(0, lineWidth, blue);
 	oldPen = pDC->SelectObject(gridPen);
 
-	pDC->MoveTo(15 * this->gridSize + lineWidth, 16 * this->gridSize);
-	pDC->LineTo(17 * this->gridSize - lineWidth, 16 * this->gridSize);
-	pDC->MoveTo(15 * this->gridSize + lineWidth, 17 * this->gridSize);
-	pDC->LineTo(17 * this->gridSize - lineWidth, 17 * this->gridSize);
+	pDC->MoveTo((x - 1) * this->gridSize + lineWidth, y * this->gridSize);
+	pDC->LineTo((x + 1) * this->gridSize - lineWidth, y * this->gridSize);
+	pDC->MoveTo((x - 1) * this->gridSize + lineWidth, (y + 1) * this->gridSize);
+	pDC->LineTo((x + 1) * this->gridSize - lineWidth, (y + 1) * this->gridSize);
+
+	return CPoint(x * this->gridSize, y * this->gridSize);
 }
 
-void CVezba1View::DrawLonger(CDC* pDC)
+CPoint CVezba1View::DrawLonger(CPoint origin, CDC* pDC)
 {
-	this->DrawTrapezoid(3 * this->gridSize, 7 * this->gridSize, 2 * this->gridSize, 17 * this->gridSize, this->gridSize, -1, yellow, blue, pDC);
-	this->DrawDiamond(3.5 * this->gridSize, 7 * this->gridSize, this->gridSize * 1, HS_CROSS, yellow, blue, pDC);
-	this->DrawDiamond(3.5 * this->gridSize, 7 * this->gridSize, this->gridSize / 2, HS_CROSS, yellow, blue, pDC);
-	this->DrawDiamond(3.5 * this->gridSize, 17 * this->gridSize, this->gridSize * 2, HS_CROSS, yellow, blue, pDC);
-	this->DrawDiamond(3.5 * this->gridSize, 17 * this->gridSize, this->gridSize / 2, HS_CROSS, yellow, blue, pDC);
+	double x = origin.x * 1.0 / this->gridSize;
+	double y = origin.y * 1.0 / this->gridSize;
+
+	this->DrawTrapezoid((x - 0.5) * this->gridSize, (y - 10) * this->gridSize, (x - 1.5) * this->gridSize, y * this->gridSize, this->gridSize, -1, yellow, blue, pDC);
+	this->DrawDiamond(x * this->gridSize, (y - 10) * this->gridSize, this->gridSize * 1, HS_CROSS, yellow, blue, pDC);
+	this->DrawDiamond(x * this->gridSize, (y - 10) * this->gridSize, this->gridSize / 2, HS_CROSS, yellow, blue, pDC);
+	this->DrawDiamond(x * this->gridSize, y * this->gridSize, this->gridSize * 2, HS_CROSS, yellow, blue, pDC);
+	this->DrawDiamond(x * this->gridSize, y * this->gridSize, this->gridSize / 2, HS_CROSS, yellow, blue, pDC);
+
+	return CPoint(x * this->gridSize, (y - 10) * this->gridSize);
 }
 
-void CVezba1View::DrawShorter(CDC* pDC)
+CPoint CVezba1View::DrawShorter(CPoint origin, CDC* pDC)
 {
-	this->DrawTrapezoid(10.5 * this->gridSize, 3.5 * this->gridSize, 3 * this->gridSize, 3 * this->gridSize, this->gridSize, -1, yellow, cyan, pDC);
+	double x = origin.x * 1.0 / this->gridSize;
+	double y = origin.y * 1.0 / this->gridSize;
 
-	this->DrawDiamond(10.5 * this->gridSize, 4 * this->gridSize, this->gridSize * 1, -1, yellow, red, pDC);
-	this->DrawDiamond(10.5 * this->gridSize, 4 * this->gridSize, this->gridSize / 2, -1, yellow, red, pDC);
+	this->DrawTrapezoid((x - 0.5) * this->gridSize, (y - 7.5) * this->gridSize, (x - 1.0) * this->gridSize, y * this->gridSize, this->gridSize, -1, yellow, cyan, pDC);
 
-	this->DrawDiamond(3 * this->gridSize, 4 * this->gridSize, this->gridSize * 1.5, -1, yellow, red, pDC);
-	this->DrawDiamond(3 * this->gridSize, 4 * this->gridSize, this->gridSize / 2, -1, yellow, red, pDC);
+	this->DrawDiamond(x * this->gridSize, (y - 7.5) * this->gridSize, this->gridSize * 1, -1, yellow, red, pDC);
+	this->DrawDiamond(x * this->gridSize, (y - 7.5) * this->gridSize, this->gridSize / 2, -1, yellow, red, pDC);
+
+	this->DrawDiamond(x * this->gridSize, y * this->gridSize, this->gridSize * 1.5, -1, yellow, red, pDC);
+	this->DrawDiamond(x * this->gridSize, y * this->gridSize, this->gridSize / 2, -1, yellow, red, pDC);
+
+	//this->DrawTrapezoid((x - 0.5) * this->gridSize, (y - 7.5) * this->gridSize, (x - 1.0) * this->gridSize, y * this->gridSize, this->gridSize, -1, yellow, cyan, pDC);
+
+	return CPoint(x * this->gridSize, (y - 7.5) * this->gridSize);
 }
 
-void CVezba1View::DrawArm(CDC* pDC)
+CPoint CVezba1View::DrawArm(CPoint origin, CDC* pDC)
 {
+	double x = origin.x * 1.0 / this->gridSize;
+	double y = origin.y * 1.0 / this->gridSize;
+
 	int n = 3;
 
 	CPen* oldPen;
@@ -351,9 +446,9 @@ void CVezba1View::DrawArm(CDC* pDC)
 
 	oldBrush = pDC->SelectObject(brush);
 
-	CPoint* first = this->DrawHalf(16 * this->gridSize, 9 * this->gridSize, this->gridSize, n, -90, pDC);
+	CPoint* first = this->DrawHalf(x * this->gridSize, (y - 1) * this->gridSize, this->gridSize, n, -90, pDC);
 
-	CPoint* second = this->DrawHalf(16 * this->gridSize, 9 * this->gridSize, this->gridSize + 20, n, -90, pDC);
+	CPoint* second = this->DrawHalf(x * this->gridSize, (y - 1) * this->gridSize, this->gridSize + 20, n, -90, pDC);
 
 	CPoint* whole = new CPoint[(n + 1) * 2];
 
@@ -364,13 +459,14 @@ void CVezba1View::DrawArm(CDC* pDC)
 
 	pDC->Polygon(whole, (n + 1) * 2);
 
-	this->DrawCircle(16 * this->gridSize, 10 * this->gridSize, this->gridSize / 2, 0, magenta, cyan, pDC);
+	this->DrawCircle(x * this->gridSize, y * this->gridSize, this->gridSize / 2, 0, magenta, cyan, pDC);
 
 	pDC->SelectObject(oldPen);
 	pDC->SelectObject(oldBrush);
 
 	delete gridPen;
 	delete brush;
+	return CPoint(x * this->gridSize, (y) * this->gridSize);
 }
 
 
@@ -396,3 +492,40 @@ CVezba1Doc* CVezba1View::GetDocument() const // non-debug version is inline
 
 
 // CVezba1View message handlers
+
+
+void CVezba1View::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	int angleIncrement = 5;
+
+	if (nChar == 'A') {
+		this->bigArmAngle += angleIncrement;
+	}
+	else if (nChar == 'S') {
+		this->bigArmAngle -= angleIncrement;
+	}
+	else if (nChar == 'D') {
+		this->smallArmAngle += angleIncrement;
+	}
+	else if (nChar == 'F') {
+		this->smallArmAngle -= angleIncrement;
+	}
+	else if (nChar == 'G') {
+		this->pincerAngle += angleIncrement;
+	}
+	else if (nChar == 'H') {
+		this->pincerAngle -= angleIncrement;
+	}
+
+	Invalidate();
+
+	//CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+
+BOOL CVezba1View::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: Add your message handler code here and/or call default
+
+	return CView::OnEraseBkgnd(pDC);
+}
