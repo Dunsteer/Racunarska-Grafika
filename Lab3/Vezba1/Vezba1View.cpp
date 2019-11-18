@@ -46,10 +46,10 @@ CVezba1View::CVezba1View() noexcept
 	this->smallArmAngle = 0;
 	this->pincerAngle = 0;
 
-	/*this->baseAngle = -90;
-	this->bigArmAngle = 0;
-	this->smallArmAngle = -90;
-	this->pincerAngle = 0;*/
+	//this->baseAngle = -90;
+	//this->bigArmAngle = 0;
+	//this->smallArmAngle = -90;
+	//this->pincerAngle = 0;
 }
 
 CVezba1View::~CVezba1View()
@@ -81,46 +81,50 @@ void CVezba1View::OnDraw(CDC* pDC)
 	pDC->SetWindowExt(1000, 1000);
 	pDC->SetWindowOrg(-500, -500);
 	pDC->SetViewportExt(rect.right, rect.bottom);
+	CDC* MemDC = pDC;
 
-	this->DrawGrid(pDC);
+	/*CBitmap memBitMap;
+	memBitMap.CreateCompatibleBitmap(pDC, 500, 500);
 
-	//LPCSTR s = LPCSTR("LAB II - GDI - opruga.emf");
-	//LPCSTR s = LPCSTR("C:\\FAKS\\GIT\\Racunarska Grafika\\GDI\\Vezba1\\LAB II - GDI - opruga.emf");
 
-	//HENHMETAFILE MF = GetEnhMetaFileA(s);
+	CDC* MemDC = new CDC();
+	MemDC->CreateCompatibleDC(pDC);
+	CBitmap* old = MemDC->SelectObject(&memBitMap);
 
-	//PlayEnhMetaFile(pDC->m_hDC, MF, CRect(20, 20, 200, 200));
+	MemDC->Rectangle(0, 0, 500, 500);*/
 
-	LPCSTR WMFname = LPCSTR("C:\\Users\\FUJITSU\\Downloads\\LAB II - GDI - opruga.emf");
-	HENHMETAFILE Meta = GetEnhMetaFileA(WMFname);
+	this->DrawGrid(MemDC);
 
-	//ResetTranslate(pDC);
-	//Translate(17*this->gridSize, 3 * this->gridSize,pDC);
-	Rotate(baseAngle, pDC);
-	CPoint origin = DrawBase(CPoint(0, 0), pDC);
+	Rotate(baseAngle, MemDC);
+	Translate(0 * this->gridSize, 0 * this->gridSize, MemDC);
+	CPoint origin = DrawBase(CPoint(0, 0), MemDC);
 
-	//ResetTranslate(pDC);
-	Translate(origin.x, origin.y, pDC);
-	Rotate(bigArmAngle, pDC);
+	Translate(origin.x, origin.y, MemDC);
+	Rotate(bigArmAngle, MemDC);
 
-	origin = DrawLonger(CPoint(0, 0), pDC);
-	//PlayEnhMetaFile(pDC->m_hDC, Meta, CRect(-100, 15, origin.x+100, origin.y));
+	origin = DrawLonger(CPoint(0, 0), MemDC);
 
-	//ResetTranslate(pDC);
-	Translate(origin.x, origin.y, pDC);
-	Rotate(smallArmAngle, pDC);
-	origin = DrawShorter(CPoint(0, 0), pDC);
-	//PlayEnhMetaFile(pDC->m_hDC, Meta, CRect(-75, 15, origin.x + 75, origin.y));
+	Translate(origin.x, origin.y, MemDC);
+	Rotate(smallArmAngle, MemDC);
+	origin = DrawShorter(CPoint(0, 0), MemDC);
 
-	//ResetTranslate(pDC);
-	Translate(origin.x, origin.y, pDC);
-	Rotate(pincerAngle - 90, pDC);
-	origin = DrawArm(CPoint(0, 0), pDC);
+	Translate(origin.x, origin.y, MemDC);
+	Rotate(pincerAngle - 90, MemDC);
+	origin = DrawArm(CPoint(0, 0), MemDC);
 
-	Rotate((-pincerAngle * 2) - 180, pDC);
-	MirrorVertical(pDC);
+	Rotate((-pincerAngle * 2) - 180, MemDC);
+	MirrorVertical(MemDC);
 
-	origin = DrawArm(CPoint(0, 0), pDC);
+	origin = DrawArm(CPoint(0, 0), MemDC);
+
+	//CBitmap* newBitmap = MemDC->SelectObject(old);
+
+	//pDC->SelectObject(newBitmap);
+
+	/*pDC->BitBlt(0,0, 500, 500, MemDC, 0, 0, SRCAND);
+
+	MemDC->DeleteDC();
+	delete MemDC;*/
 }
 
 
@@ -356,7 +360,7 @@ void CVezba1View::MakeTransparent(CPoint point, Hatch h, int slika, CDC* pDC) {
 			}break;
 
 			case 11: {
-				if ((25 > (i + bm.bmWidth - j) % 50 && j <= bm.bmWidth / 2) || 
+				if ((25 > (i + bm.bmWidth - j) % 50 && j <= bm.bmWidth / 2) ||
 					(25 < (i + bm.bmWidth + j) % 50 && j > bm.bmWidth / 2)) {
 					FilterPixel(bmpBuffer, i, j, bm.bmWidthBytes, h);
 				}
