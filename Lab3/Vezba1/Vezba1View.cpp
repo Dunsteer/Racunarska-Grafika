@@ -136,7 +136,6 @@ void CVezba1View::OnDraw(CDC* pDC)
 	prevMode = SetGraphicsMode(MemDC->m_hDC, GM_ADVANCED);
 	dw = GetLastError();
 
-	Xform;
 	b = GetWorldTransform(MemDC->m_hDC, &XformOld);
 
 	Xform.eM11 = (FLOAT)1;
