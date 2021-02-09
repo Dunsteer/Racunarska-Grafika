@@ -67,9 +67,9 @@ void CGDIView::OnDraw(CDC* pDC)
 
 	pDC->SetWorldTransform(lpxform);
 
-	//this->DrawWP(pDC, 200, 150, 50, 800, 20, 200);
-	this->mipmap = new CMipMap(new CString(""), pDC);
-	this->mipmap->DrawMipmap(pDC, 0, 0, 300);
+	this->DrawWP(pDC, 200, 150, 50, 800, 20, 200);
+	//this->mipmap = new CMipMap(new CString(""), pDC);
+	//this->mipmap->DrawMipmap(pDC, 0, 0, 300);
 
 
 	if (!pDoc)
