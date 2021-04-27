@@ -71,7 +71,6 @@ void CGDIView::OnDraw(CDC* pDC)
 	//this->mipmap = new CMipMap(new CString(""), pDC);
 	//this->mipmap->DrawMipmap(pDC, 0, 0, 300);
 
-
 	if (!pDoc)
 		return;
 
