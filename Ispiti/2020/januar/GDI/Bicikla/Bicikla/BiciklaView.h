@@ -18,11 +18,13 @@ public:
 // Operations
 public:
 	void Translate(CDC* pDC, double x, double y);
-	void Rotate(CDC* pDC, double angle);
+	void Rotate(CDC* pDC, double angle, bool right = false);
 	void DrawCycle(CDC* pDC, int r, int n, int d);
 	void DrawBicycle(CDC* pDC, int r, int n, int d, int alpha, int beta);
 	void DrawTexty(CDC* pDC, int size, CString strText, COLORREF clrText);
-	void SaveDC(CDC* pDC, CRect rcDC, CRect rcBmp);
+	CBitmap* SaveDC(CDC* pDC, CRect rcDC, CRect rcBmp);
+
+	void DrawTendril(CDC* pDC, int r, int n, int d);
 // Overrides
 public:
 	virtual void OnDraw(CDC* pDC);  // overridden to draw this view

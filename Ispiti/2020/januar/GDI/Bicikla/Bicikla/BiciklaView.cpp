@@ -17,6 +17,7 @@
 #define new DEBUG_NEW
 #endif
 
+#define ToRad 3.14/180;
 
 // CBiciklaView
 
@@ -70,12 +71,14 @@ void CBiciklaView::OnDraw(CDC* pDC)
 
 	pDC->SetWorldTransform(lpxform);
 
-	this->Translate(pDC, 200, 300);
+	this->Translate(pDC, 500, 500);
 
 	DrawBicycle(pDC, 150, 20, 5, 10, 20);
 	Translate(pDC, 2.5 * 150, 150);
-	Rotate(pDC, -3.14/2);
+	Rotate(pDC, -3.14 / 2);
 	DrawTexty(pDC, 150, CString("penny-farthing"), RGB(69, 23, 169));
+
+	//DrawTendril(pDC, 100, 6, 5);
 }
 
 void CBiciklaView::Translate(CDC* pDC, double x, double y)
@@ -90,7 +93,7 @@ void CBiciklaView::Translate(CDC* pDC, double x, double y)
 	pDC->ModifyWorldTransform(form, MWT_LEFTMULTIPLY);
 }
 
-void CBiciklaView::Rotate(CDC* pDC, double angle)
+void CBiciklaView::Rotate(CDC* pDC, double angle, bool right)
 {
 	XFORM* form = new XFORM();
 	form->eDx = 0;
@@ -99,7 +102,7 @@ void CBiciklaView::Rotate(CDC* pDC, double angle)
 	form->eM12 = sin(angle);
 	form->eM21 = -sin(angle);
 	form->eM22 = cos(angle);
-	pDC->ModifyWorldTransform(form, MWT_LEFTMULTIPLY);
+	pDC->ModifyWorldTransform(form, right?MWT_RIGHTMULTIPLY: MWT_LEFTMULTIPLY);
 }
 
 void CBiciklaView::DrawCycle(CDC* pDC, int r, int n, int d)
@@ -188,23 +191,60 @@ void CBiciklaView::DrawBicycle(CDC* pDC, int r, int n, int d, int alpha, int bet
 
 void CBiciklaView::DrawTexty(CDC* pDC, int size, CString strText, COLORREF clrText)
 {
-	CFont *font = new CFont();
+	CFont* font = new CFont();
 	font->CreatePointFont(size, CString("Arial"));
 	pDC->SelectObject(font);
 	pDC->DrawText(strText, CRect(0, 0, size * strText.GetLength(), size), 0);
 }
 
-//void CBiciklaView::SaveDC(CDC* pDC, CRect rcDC, CRect rcBmp)
-//{
-//	CDC* pDCmem = new CDC();
-//
-//	CBitmap* bmp = new CBitmap();
-//	bmp->CreateBitmap(rcBmp.Width(), rcBmp.Height(), 1, 3, );
-//	//pDCmem->SelectObject()
-//
-//	//pDCmem->BitBlt(rcDC.left,rcDC.top,rcDC.Width(),rcDC.Height(),pDC,)
-//
-//}
+void CBiciklaView::DrawTendril(CDC* pDC, int r, int n, int d)
+{
+	float angle = 360 / n * ToRad;
+	float stranica = sin(angle / 2) * r;
+	float visina = cos(angle / 2) * r;
+	pDC->MoveTo(0, 0);
+	CPen *tanak=new CPen(0, d, RGB(255, 255, 255));
+	CPen* debeo = new CPen(0, d * 3, RGB(255, 255, 255));
+
+	CPen *obj = pDC->SelectObject(debeo);
+
+	pDC->Rectangle(-stranica, 8 * r, stranica, 0);
+
+	pDC->SelectObject(tanak);
+
+	Translate(pDC, 0, 8 * r + visina);
+
+	for (int i = 0; i < n - 1; i++) {
+		int c = cos(angle * i);
+		int s = sin(angle * i);
+
+		pDC->MoveTo(c * r, s * r);
+		pDC->LineTo(c * r * 2, s * r * 2);
+
+		c = cos(angle * (i + 1));
+		s = sin(angle * (i + 1));
+
+		pDC->LineTo(c * r, s * r);
+	}
+
+	pDC->SelectObject(obj);
+
+	delete tanak;
+	delete debeo;
+}
+
+CBitmap* CBiciklaView::SaveDC(CDC* pDC, CRect rcDC, CRect rcBmp)
+{
+	CDC* pDCmem = new CDC();
+
+	CBitmap* bmp = new CBitmap();
+	bmp->CreateBitmap(rcBmp.Width(), rcBmp.Height(), 4, 8, NULL);
+
+	pDCmem->SelectObject(bmp);
+	pDCmem->BitBlt(rcBmp.left, rcBmp.top, rcBmp.right, rcBmp.bottom, pDC, rcDC.top, rcDC.left, SRCCOPY);
+
+	return bmp;
+}
 
 
 // CBiciklaView printing
